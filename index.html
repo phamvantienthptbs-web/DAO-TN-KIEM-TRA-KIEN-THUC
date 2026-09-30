@@ -17,7 +17,7 @@ body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;b
 .lbox h1{margin:6px 0 4px;font-size:22px}
 .lbox p{margin:0 0 22px;color:var(--mut);font-size:14px}
 input[type=password]{width:100%;padding:13px 16px;border:2px solid var(--bd);border-radius:12px;font-size:16px;outline:none;transition:.15s}
-input[type=password]:focus{border-color:var(--pri);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
+input[type=password]:focus,textarea:focus{border-color:var(--pri);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
 .err{color:var(--bad);font-size:14px;margin-top:10px;min-height:20px}
 .copy{margin-top:18px;font-size:13px;color:var(--mut)}
 .btn{display:inline-block;border:0;border-radius:12px;padding:11px 18px;font-weight:600;font-size:15px;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;transition:.15s}
@@ -34,13 +34,20 @@ header{position:sticky;top:0;z-index:5;background:#fff;box-shadow:0 2px 14px rgb
 .prog{height:6px;background:var(--bd);border-radius:9px;margin-top:8px;overflow:hidden}
 .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .4s}
 main{max-width:860px;margin:18px auto;padding:0 14px 30px}
-.lib{background:#fff;border-radius:16px;padding:14px 20px;margin-bottom:18px;box-shadow:0 2px 10px rgba(15,23,42,.06)}
+.lib,.req{background:#fff;border-radius:16px;padding:14px 20px;margin-bottom:18px;box-shadow:0 2px 10px rgba(15,23,42,.06)}
 .lib summary{font-weight:700;cursor:pointer}
 .lr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.lr>div:first-child{display:flex;align-items:center;gap:12px}
+.no{flex:none;width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;display:grid;place-items:center;font-weight:700;font-size:14px}
 .lr small{display:block;color:var(--mut)}
 .lr .btn{margin-left:6px}
 .tg{background:#fef3c7;color:#92400e;font-size:12px;padding:2px 8px;border-radius:9px;margin-left:6px}
 .mut{color:var(--mut)}
+.note{font-size:13px;color:var(--mut);margin:8px 0 0}
+.req{border-left:5px solid #f59e0b;background:#fffbeb}
+.rh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+#reqtx{white-space:pre-wrap}
+textarea{width:100%;padding:12px;border:2px solid var(--bd);border-radius:12px;font:inherit;outline:none;resize:vertical}
 .hd{font-weight:700;background:#eef2ff;border-left:5px solid var(--pri);padding:12px 16px;border-radius:10px;margin:24px 0 14px}
 .ps{background:#fff;border-radius:12px;padding:12px 18px;margin-bottom:12px;box-shadow:0 2px 10px rgba(15,23,42,.05)}
 .q{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px rgba(15,23,42,.06);scroll-margin-top:190px}
@@ -86,14 +93,23 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 26px}
   </header>
   <main>
     <details id="libbox" class="lib" open>
-      <summary>📚 Thư viện đề đã lưu</summary>
+      <summary id="lt">📚 Danh sách bài tập đã đưa lên</summary>
       <div id="libl"></div>
       <div class="bar">
         <button class="btn sec" id="lx">⬆️ Xuất thư viện (exams.json)</button>
         <label class="btn sec" for="li">⬇️ Nhập thư viện</label>
         <input type="file" id="li" accept=".json" hidden>
       </div>
+      <p class="note">💾 Toàn bộ bài tập, yêu cầu và tiến độ làm bài được lưu ngay trong trình duyệt trên máy tính này, không gửi đi đâu. Nên bấm "Xuất thư viện" để sao lưu định kỳ.</p>
     </details>
+    <div id="reqbox" class="req hide">
+      <div class="rh"><b>📌 Yêu cầu bài tập</b><button class="btn sec" id="reqe">✏️ Sửa yêu cầu</button></div>
+      <div id="reqtx"></div>
+      <div id="reqed" class="hide">
+        <textarea id="reqta" rows="4" placeholder="Nhập yêu cầu / hướng dẫn làm bài để học sinh hiểu..."></textarea>
+        <div class="bar"><button class="btn gr" id="reqs">Lưu yêu cầu</button><button class="btn sec" id="reqc">Hủy</button></div>
+      </div>
+    </div>
     <div id="list"></div>
   </main>
   <footer>Bản quyền thuộc về số ĐT: 0943930787</footer>
@@ -118,9 +134,9 @@ $('lf').onsubmit=e=>{
 $('out').onclick=()=>{sessionStorage.removeItem('auth');gate()};
 gate();
 
-/* ---------- Dữ liệu ---------- */
-let base=[],cur=[],code=0,name='',tries=0,lib=[],shared=[];
-const LK='exams_v1';
+/* ---------- Dữ liệu (lưu trong localStorage của trình duyệt trên máy người dùng) ---------- */
+let base=[],cur=[],code=0,name='',tries=0,lib=[],shared=[],exam=null;
+const LK='exams_v1',SK='state_v1';
 const all=()=>[...shared,...lib];
 function load(){try{lib=JSON.parse(localStorage.getItem(LK)||'[]')}catch(e){lib=[]}}
 function save(){try{localStorage.setItem(LK,JSON.stringify(lib));return true}catch(e){alert('Không lưu được vào bộ nhớ trình duyệt (đầy hoặc bị chặn).');return false}}
@@ -150,7 +166,7 @@ function mk(T,F,a,b){
 }
 function ratio(T,F,a,b,m=1){let u=0,n=0;for(let i=a;i<b;i++){if(/\s/.test(T[i]))continue;n++;if(F[i]&m)u++}return n?u/n:0}
 
-// Văn bản nằm ngoài câu hỏi: dòng in đậm hoàn toàn = yêu cầu đề bài ('h'), còn lại = đoạn văn/ghi chú ('p')
+// Dòng in đậm hoàn toàn = yêu cầu đề bài ('h'); dòng khác ngoài câu hỏi = đoạn văn/ghi chú ('p')
 function blocks(T,F,a,b){
   const out=[];let p=a;
   T.slice(a,b).split('\n').forEach(line=>{
@@ -198,28 +214,34 @@ $('file').onchange=async e=>{
     const r=await mammoth.convertToHtml({arrayBuffer:await f.arrayBuffer()},{styleMap:['u => u']});
     const {T,F}=flatten(r.value),items=parse(T,F),qs=items.filter(x=>x.k==='q');
     if(!qs.length){alert('Không nhận diện được câu hỏi nào. Hãy kiểm tra: câu bắt đầu bằng "Câu"/"Question" và có đủ 4 đáp án A, B, C, D.');return}
-    const ex={id:'e'+Date.now(),name:f.name.replace(/\.docx$/i,''),at:Date.now(),items};
-    lib=lib.filter(y=>y.name!==ex.name);lib.unshift(ex);save();showLib();openEx(ex);
+    const ex={id:'e'+Date.now(),name:f.name.replace(/\.docx$/i,''),at:Date.now(),items,req:''};
+    const old=lib.find(y=>y.name===ex.name);if(old)ex.req=old.req||'';
+    lib=lib.filter(y=>y!==old);lib.push(ex);save();showLib();openEx(ex);
     const miss=qs.filter(q=>!q.opts.some(o=>o.ok)).length;
     if(miss)alert(`Đã đọc ${qs.length} câu. Có ${miss} câu không tìm thấy đáp án gạch chân, vui lòng kiểm tra lại file gốc.`);
   }catch(err){alert('Lỗi đọc file: '+err.message)}
   e.target.value='';
 };
 
-/* ---------- Thư viện đề ---------- */
+/* ---------- Danh sách bài tập (có số thứ tự) ---------- */
 function showLib(){
   const a=all();
-  $('libl').innerHTML=a.length?a.map(x=>`<div class="lr"><div><b>${esc(x.name)}</b>${x.shared?'<span class="tg">Đề chung</span>':''}<small>${x.items.filter(i=>i.k==='q').length} câu • ${new Date(x.at).toLocaleDateString('vi-VN')}</small></div><div><button class="btn sec" data-a="open" data-id="${esc(x.id)}">Mở</button>${x.shared?'':`<button class="btn sec" data-a="del" data-id="${esc(x.id)}">🗑</button>`}</div></div>`).join('')
-    :'<p class="mut">Chưa có đề nào. Hãy tải một file Docx đề gốc, đề sẽ được lưu tự động vào đây.</p>';
+  $('lt').textContent=`📚 Danh sách bài tập đã đưa lên (${a.length})`;
+  $('libl').innerHTML=a.length?a.map((x,i)=>`<div class="lr"><div><span class="no">${i+1}</span><div><b>${esc(x.name)}</b>${x.shared?'<span class="tg">Đề chung</span>':''}<small>${x.items.filter(k=>k.k==='q').length} câu • ${new Date(x.at).toLocaleDateString('vi-VN')}${x.req?' • 📌 có yêu cầu':''}</small></div></div><div><button class="btn sec" data-a="open" data-id="${esc(x.id)}">Mở</button>${x.shared?'':`<button class="btn sec" data-a="del" data-id="${esc(x.id)}">🗑</button>`}</div></div>`).join('')
+    :'<p class="mut">Chưa có bài tập nào. Hãy tải một file Docx đề gốc, bài tập sẽ được lưu tự động vào đây.</p>';
 }
 $('libl').onclick=e=>{
   const b=e.target.closest('button');if(!b)return;
   const x=all().find(y=>String(y.id)===b.dataset.id);if(!x)return;
   if(b.dataset.a==='open')openEx(x);
-  else if(confirm('Xóa đề "'+x.name+'" khỏi thư viện?')){lib=lib.filter(y=>y!==x);save();showLib()}
+  else if(confirm('Xóa bài tập "'+x.name+'" khỏi danh sách?')){
+    lib=lib.filter(y=>y!==x);save();
+    if(exam===x){exam=null;base=[];cur=[];localStorage.removeItem(SK);$('list').innerHTML='';$('shuf').disabled=$('exp').disabled=true;showReq();upd()}
+    showLib();
+  }
 };
 $('lx').onclick=()=>{
-  if(!lib.length)return alert('Thư viện đang trống.');
+  if(!lib.length)return alert('Danh sách đang trống.');
   dl(new Blob([JSON.stringify(lib)],{type:'application/json'}),'exams.json');
 };
 $('li').onchange=async e=>{
@@ -227,16 +249,28 @@ $('li').onchange=async e=>{
   try{
     const a=JSON.parse(await f.text());if(!Array.isArray(a))throw Error('File không đúng định dạng');
     let n=0;
-    a.forEach(x=>{if(x&&x.name&&Array.isArray(x.items)){lib=lib.filter(y=>y.name!==x.name);lib.push({id:'e'+Date.now()+n,name:x.name,at:x.at||Date.now(),items:x.items});n++}});
-    save();showLib();alert(`Đã nhập ${n} đề vào thư viện.`);
-  }catch(err){alert('Lỗi nhập thư viện: '+err.message)}
+    a.forEach(x=>{if(x&&x.name&&Array.isArray(x.items)){lib=lib.filter(y=>y.name!==x.name);lib.push({id:'e'+Date.now()+n,name:x.name,at:x.at||Date.now(),items:x.items,req:x.req||''});n++}});
+    save();showLib();alert(`Đã nhập ${n} bài tập.`);
+  }catch(err){alert('Lỗi nhập file: '+err.message)}
   e.target.value='';
 };
 function openEx(ex){
-  base=ex.items;name=ex.name;code=0;cur=base.map(x=>({...x}));
+  exam=ex;base=ex.items;name=ex.name;code=0;cur=base.map(x=>({...x}));
   $('shuf').disabled=$('exp').disabled=false;$('libbox').open=false;
-  render();window.scrollTo({top:0});
+  showReq();render();window.scrollTo({top:0});
 }
+
+/* ---------- Yêu cầu bài tập ---------- */
+function showReq(){
+  const ed=exam&&!exam.shared,t=$('reqtx');
+  $('reqbox').classList.toggle('hide',!exam||(!exam.req&&!ed));
+  t.textContent=(exam&&exam.req)||'Chưa có yêu cầu. Bấm "Sửa yêu cầu" để nhập hướng dẫn cho học sinh.';
+  t.classList.toggle('mut',!(exam&&exam.req));t.classList.remove('hide');
+  $('reqed').classList.add('hide');$('reqe').classList.toggle('hide',!ed);
+}
+$('reqe').onclick=()=>{$('reqta').value=exam.req||'';$('reqed').classList.remove('hide');$('reqtx').classList.add('hide');$('reqta').focus()};
+$('reqs').onclick=()=>{exam.req=$('reqta').value.trim();save();showReq();showLib()};
+$('reqc').onclick=showReq;
 
 /* ---------- Đảo đề: đảo câu trong từng nhóm (giữa 2 dòng yêu cầu/đoạn văn) + đảo đáp án ---------- */
 const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
@@ -249,30 +283,31 @@ function shuffleItems(items){
 $('shuf').onclick=()=>{cur=shuffleItems(base);code++;render();window.scrollTo({top:0,behavior:'smooth'})};
 
 /* ---------- Hiển thị & chọn đáp án ---------- */
-function rh(rs,b){
+function rh(rs){
   return rs.map(r=>{
     let s=esc(r.t).replace(/\n/g,'<br>');
     if(r.f&1)s='<u>'+s+'</u>';if(r.f&2)s='<b>'+s+'</b>';if(r.f&4)s='<i>'+s+'</i>';
     return s;
   }).join('');
 }
-function render(){
-  tries=0;let n=0;
+function render(keep){
+  if(!keep)tries=0;let n=0;
   $('list').innerHTML=cur.map((x,i)=>{
     if(x.k==='h')return`<div class="hd">${rh(x.runs)}</div>`;
     if(x.k==='p')return`<div class="ps">${rh(x.runs)}</div>`;
-    n++;
+    n++;const d=x.done;
     return`<section class="q" id="q${i}"><div class="qh">Câu ${n}</div><div class="st">${rh(x.stem)}</div>
-    <div class="os">${x.opts.map((o,j)=>`<button class="o" data-i="${i}" data-j="${j}"><span class="l">${'ABCD'[j]}</span><span>${rh(o.runs)}</span></button>`).join('')}</div>
-    <div class="fb" id="fb${i}"></div></section>`;
+    <div class="os">${x.opts.map((o,j)=>`<button class="o${d&&o.ok?' ok':''}"${d?' disabled':''} data-i="${i}" data-j="${j}"><span class="l">${'ABCD'[j]}</span><span>${rh(o.runs)}</span></button>`).join('')}</div>
+    <div class="fb${d?' good':''}" id="fb${i}">${d?'✅ Chính xác!':''}</div></section>`;
   }).join('');
   upd();
 }
 function upd(){
   const qs=cur.filter(x=>x.k==='q'),n=qs.length,d=qs.filter(q=>q.done).length;
-  $('info').innerHTML=n?`<b>${esc(name)}</b> • ${code?'Mã đề #'+code:'Đề gốc'} • ${n} câu • Đã đúng: <b>${d}/${n}</b> • Lượt chọn sai: <b>${tries}</b>${d===n?' • 🎉 Hoàn thành!':''}`
-    :'Chưa mở đề. Hãy tải file Docx đề gốc hoặc chọn một đề trong thư viện.';
+  $('info').innerHTML=n?`Bài tập <b>${all().indexOf(exam)+1}/${all().length}</b>: <b>${esc(name)}</b> • ${code?'Mã đề #'+code:'Đề gốc'} • ${n} câu • Đã đúng: <b>${d}/${n}</b> • Lượt chọn sai: <b>${tries}</b>${d===n?' • 🎉 Hoàn thành!':''}`
+    :'Chưa mở bài tập. Hãy tải file Docx đề gốc hoặc chọn một bài trong danh sách.';
   $('pb').style.width=(n?d/n*100:0)+'%';
+  if(exam)try{localStorage.setItem(SK,JSON.stringify({id:exam.id,code,tries,cur}))}catch(e){}
 }
 $('list').onclick=e=>{
   const b=e.target.closest('.o');if(!b||b.disabled)return;
@@ -301,6 +336,8 @@ $('exp').onclick=async()=>{
       text:p,break:k?1:0,bold:b||!!(r.f&2),italics:!!(r.f&4),underline:(u||(r.f&1))?U:undefined}));
     P.push(new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{after:240},
       children:[new D.TextRun({text:'ĐỀ TRẮC NGHIỆM – '+(code?'MÃ ĐỀ '+code:'ĐỀ GỐC'),bold:true,size:28})]}));
+    if(exam&&exam.req)P.push(new D.Paragraph({spacing:{after:200},
+      children:exam.req.split('\n').map((p,k)=>new D.TextRun({text:p,italics:true,break:k?1:0}))}));
     cur.forEach(x=>{
       if(x.k!=='q'){
         P.push(new D.Paragraph({spacing:{before:x.k==='h'?240:80,after:80},children:x.runs.flatMap(r=>run(r,false,x.k==='h'))}));
@@ -325,10 +362,21 @@ $('exp').onclick=async()=>{
 };
 
 /* ---------- Khởi động ---------- */
-load();showLib();upd();
-// Đề chung: nếu có file exams.json đặt cạnh index.html thì mọi máy đều thấy
+function tryRestore(){ // mở lại đúng bài đang làm dở
+  if(exam)return;
+  try{
+    const s=JSON.parse(localStorage.getItem(SK)||'null');if(!s)return;
+    const ex=all().find(y=>String(y.id)===String(s.id));if(!ex)return;
+    exam=ex;base=ex.items;name=ex.name;code=s.code;tries=s.tries;cur=s.cur;
+    $('shuf').disabled=$('exp').disabled=false;$('libbox').open=false;
+    showReq();render(true);
+  }catch(e){}
+}
+if(navigator.storage&&navigator.storage.persist)navigator.storage.persist(); // xin trình duyệt không tự xóa dữ liệu
+load();showLib();upd();tryRestore();
+// Đề chung (tùy chọn): nếu có exams.json đặt cạnh index.html thì mọi máy đều thấy
 fetch('exams.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(a=>{
-  if(Array.isArray(a)){shared=a.filter(x=>x&&x.name&&Array.isArray(x.items)).map((x,i)=>({...x,id:'s'+i,shared:1}));showLib()}
+  if(Array.isArray(a)){shared=a.filter(x=>x&&x.name&&Array.isArray(x.items)).map((x,i)=>({...x,id:'s'+i,shared:1}));showLib();tryRestore()}
 }).catch(()=>{});
 </script>
 </body>
