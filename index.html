@@ -11,7 +11,6 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);line-height:1.55}
 .hide{display:none!important}
-/* Login */
 #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#4f46e5,#7c3aed 55%,#ec4899)}
 .lbox{background:#fff;border-radius:22px;padding:38px 32px 28px;width:100%;max-width:410px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.3)}
 .lbox .ic{font-size:52px}
@@ -21,13 +20,12 @@ input[type=password]{width:100%;padding:13px 16px;border:2px solid var(--bd);bor
 input[type=password]:focus{border-color:var(--pri);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
 .err{color:var(--bad);font-size:14px;margin-top:10px;min-height:20px}
 .copy{margin-top:18px;font-size:13px;color:var(--mut)}
-.btn{display:inline-block;border:0;border-radius:12px;padding:11px 18px;font:600 15px inherit;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;transition:.15s}
+.btn{display:inline-block;border:0;border-radius:12px;padding:11px 18px;font-weight:600;font-size:15px;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;transition:.15s}
 .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 16px rgba(79,70,229,.35)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
-.btn.sec{background:#fff;color:var(--pri);border:2px solid var(--pri);padding:9px 16px}
+.btn.sec{background:#fff;color:var(--pri);border:2px solid var(--pri);padding:8px 14px;font-size:14px}
 .btn.gr{background:linear-gradient(135deg,#16a34a,#059669)}
-.lbox .btn{width:100%;margin-top:14px}
-/* App */
+.lbox .btn{width:100%;margin-top:14px;font-size:15px;padding:11px 18px}
 header{position:sticky;top:0;z-index:5;background:#fff;box-shadow:0 2px 14px rgba(15,23,42,.1);padding:12px 18px}
 .top{display:flex;justify-content:space-between;align-items:center}
 .top h1{font-size:19px;margin:0}
@@ -36,6 +34,15 @@ header{position:sticky;top:0;z-index:5;background:#fff;box-shadow:0 2px 14px rgb
 .prog{height:6px;background:var(--bd);border-radius:9px;margin-top:8px;overflow:hidden}
 .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .4s}
 main{max-width:860px;margin:18px auto;padding:0 14px 30px}
+.lib{background:#fff;border-radius:16px;padding:14px 20px;margin-bottom:18px;box-shadow:0 2px 10px rgba(15,23,42,.06)}
+.lib summary{font-weight:700;cursor:pointer}
+.lr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.lr small{display:block;color:var(--mut)}
+.lr .btn{margin-left:6px}
+.tg{background:#fef3c7;color:#92400e;font-size:12px;padding:2px 8px;border-radius:9px;margin-left:6px}
+.mut{color:var(--mut)}
+.hd{font-weight:700;background:#eef2ff;border-left:5px solid var(--pri);padding:12px 16px;border-radius:10px;margin:24px 0 14px}
+.ps{background:#fff;border-radius:12px;padding:12px 18px;margin-bottom:12px;box-shadow:0 2px 10px rgba(15,23,42,.05)}
 .q{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px rgba(15,23,42,.06);scroll-margin-top:190px}
 .qh{font-weight:700;color:var(--pri);margin-bottom:6px}
 .st{font-size:17px;margin-bottom:14px}
@@ -53,7 +60,6 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 26px}
 </head>
 <body>
 
-<!-- ĐĂNG NHẬP -->
 <div id="login">
   <form class="lbox" id="lf">
     <div class="ic">🔐</div>
@@ -66,7 +72,6 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 26px}
   </form>
 </div>
 
-<!-- ỨNG DỤNG -->
 <div id="app" class="hide">
   <header>
     <div class="top"><h1>📝 Đảo đề trắc nghiệm</h1><button class="btn sec" id="out">Đăng xuất</button></div>
@@ -79,16 +84,27 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 26px}
     <div class="info" id="info"></div>
     <div class="prog"><i id="pb"></i></div>
   </header>
-  <main id="list"></main>
+  <main>
+    <details id="libbox" class="lib" open>
+      <summary>📚 Thư viện đề đã lưu</summary>
+      <div id="libl"></div>
+      <div class="bar">
+        <button class="btn sec" id="lx">⬆️ Xuất thư viện (exams.json)</button>
+        <label class="btn sec" for="li">⬇️ Nhập thư viện</label>
+        <input type="file" id="li" accept=".json" hidden>
+      </div>
+    </details>
+    <div id="list"></div>
+  </main>
   <footer>Bản quyền thuộc về số ĐT: 0943930787</footer>
 </div>
 
 <script>
 const PW='huongson28011981';
 const $=id=>document.getElementById(id);
-const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
-/* ---------- Đăng nhập (sessionStorage: tắt tab là phải đăng nhập lại) ---------- */
+/* ---------- Đăng nhập (tắt tab là phải đăng nhập lại) ---------- */
 function gate(){
   const ok=sessionStorage.getItem('auth')==='1';
   $('login').classList.toggle('hide',ok);
@@ -102,10 +118,16 @@ $('lf').onsubmit=e=>{
 $('out').onclick=()=>{sessionStorage.removeItem('auth');gate()};
 gate();
 
-/* ---------- Đọc file Word ---------- */
-let orig=[],cur=[],code=0,name='',tries=0;
+/* ---------- Dữ liệu ---------- */
+let base=[],cur=[],code=0,name='',tries=0,lib=[],shared=[];
+const LK='exams_v1';
+const all=()=>[...shared,...lib];
+function load(){try{lib=JSON.parse(localStorage.getItem(LK)||'[]')}catch(e){lib=[]}}
+function save(){try{localStorage.setItem(LK,JSON.stringify(lib));return true}catch(e){alert('Không lưu được vào bộ nhớ trình duyệt (đầy hoặc bị chặn).');return false}}
+function dl(blob,fn){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),5000)}
 
-// Chuyển HTML của mammoth thành chuỗi T + mảng cờ định dạng F (1=gạch chân, 2=đậm, 4=nghiêng)
+/* ---------- Đọc file Word ---------- */
+// F: 1=gạch chân, 2=đậm, 4=nghiêng
 function flatten(html){
   const d=new DOMParser().parseFromString(html,'text/html');let T='';const F=[];
   const add=(s,f)=>{for(let k=0;k<s.length;k++){T+=s[k];F.push(f)}};
@@ -121,18 +143,31 @@ function flatten(html){
   })(d.body,0);
   return{T,F};
 }
-function mk(T,F,a,b){ // tạo danh sách "run" (đoạn cùng định dạng), đã cắt khoảng trắng 2 đầu
+function mk(T,F,a,b){
   while(a<b&&/\s/.test(T[a]))a++;while(b>a&&/\s/.test(T[b-1]))b--;
   const r=[];for(let i=a;i<b;i++){const l=r[r.length-1];if(l&&l.f===F[i])l.t+=T[i];else r.push({t:T[i],f:F[i]})}
   return r;
 }
-function ratio(T,F,a,b){let u=0,n=0;for(let i=a;i<b;i++){if(/\s/.test(T[i]))continue;n++;if(F[i]&1)u++}return n?u/n:0}
+function ratio(T,F,a,b,m=1){let u=0,n=0;for(let i=a;i<b;i++){if(/\s/.test(T[i]))continue;n++;if(F[i]&m)u++}return n?u/n:0}
+
+// Văn bản nằm ngoài câu hỏi: dòng in đậm hoàn toàn = yêu cầu đề bài ('h'), còn lại = đoạn văn/ghi chú ('p')
+function blocks(T,F,a,b){
+  const out=[];let p=a;
+  T.slice(a,b).split('\n').forEach(line=>{
+    const s=p;p+=line.length+1;
+    const r=mk(T,F,s,s+line.length);
+    if(r.length)out.push({k:ratio(T,F,s,s+line.length,2)===1?'h':'p',runs:r});
+  });
+  return out;
+}
 
 function parse(T,F){
   const re=/(?:^|\n)[ \t]*(?:câu|question)\s*\d+\s*[.:)]?[ \t]*/gi,ms=[...T.matchAll(re)],out=[];
+  if(!ms.length)return out;
+  out.push(...blocks(T,F,0,ms[0].index));
   ms.forEach((m,k)=>{
-    const s=m.index+m[0].length,e=k+1<ms.length?ms[k+1].index:T.length,seg=T.slice(s,e),P=[];let p=0;
-    for(const L of 'ABCD'){ // tìm lần lượt nhãn A. B. C. D.
+    const s=m.index+m[0].length,e=k+1<ms.length?ms[k+1].index:T.length,seg=T.slice(s,e),P=[];let p=0,endD=s;
+    for(const L of 'ABCD'){
       const x=new RegExp('(^|\\s)'+L+'\\s*[.)]\\s*').exec(seg.slice(p));
       if(!x)return;
       P.push([p+x.index+x[1].length,p+x.index+x[0].length]);p+=x.index+x[0].length;
@@ -141,6 +176,7 @@ function parse(T,F){
       let end=i<3?s+P[i+1][0]:e,a=s+q[1];
       while(a<end&&/\s/.test(T[a]))a++;
       const nl=T.indexOf('\n',a);if(nl>=0&&nl<end)end=nl;
+      if(i===3)endD=end;
       return{runs:mk(T,F,a,end),r:ratio(T,F,s+q[0],end)};
     });
     const rt=o.map(x=>x.r),n=rt.filter(x=>x>0).length,mx=Math.max(...rt);
@@ -148,9 +184,10 @@ function parse(T,F){
     if(n===1)ok=rt.findIndex(x=>x>0);
     else if(n>1&&mx>=.5&&rt.filter(x=>x===mx).length===1)ok=rt.indexOf(mx);
     out.push({
-      stem:mk(T,F,s,s+P[0][0]),
+      k:'q',stem:mk(T,F,s,s+P[0][0]),
       opts:o.map((x,i)=>({runs:(n===1&&i===ok)?x.runs.map(r=>({t:r.t,f:r.f&~1})):x.runs,ok:i===ok}))
     });
+    out.push(...blocks(T,F,endD,e));
   });
   return out;
 }
@@ -159,27 +196,60 @@ $('file').onchange=async e=>{
   const f=e.target.files[0];if(!f)return;
   try{
     const r=await mammoth.convertToHtml({arrayBuffer:await f.arrayBuffer()},{styleMap:['u => u']});
-    const {T,F}=flatten(r.value);
-    const qs=parse(T,F);
+    const {T,F}=flatten(r.value),items=parse(T,F),qs=items.filter(x=>x.k==='q');
     if(!qs.length){alert('Không nhận diện được câu hỏi nào. Hãy kiểm tra: câu bắt đầu bằng "Câu"/"Question" và có đủ 4 đáp án A, B, C, D.');return}
-    orig=qs;name=f.name;code=0;cur=orig.map(q=>({...q}));
-    $('shuf').disabled=$('exp').disabled=false;
-    render();
+    const ex={id:'e'+Date.now(),name:f.name.replace(/\.docx$/i,''),at:Date.now(),items};
+    lib=lib.filter(y=>y.name!==ex.name);lib.unshift(ex);save();showLib();openEx(ex);
     const miss=qs.filter(q=>!q.opts.some(o=>o.ok)).length;
     if(miss)alert(`Đã đọc ${qs.length} câu. Có ${miss} câu không tìm thấy đáp án gạch chân, vui lòng kiểm tra lại file gốc.`);
   }catch(err){alert('Lỗi đọc file: '+err.message)}
   e.target.value='';
 };
 
-/* ---------- Đảo đề ---------- */
-const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
-$('shuf').onclick=()=>{
-  cur=sh(orig).map(q=>({...q,opts:sh(q.opts)}));
-  code++;render();window.scrollTo({top:0,behavior:'smooth'});
+/* ---------- Thư viện đề ---------- */
+function showLib(){
+  const a=all();
+  $('libl').innerHTML=a.length?a.map(x=>`<div class="lr"><div><b>${esc(x.name)}</b>${x.shared?'<span class="tg">Đề chung</span>':''}<small>${x.items.filter(i=>i.k==='q').length} câu • ${new Date(x.at).toLocaleDateString('vi-VN')}</small></div><div><button class="btn sec" data-a="open" data-id="${esc(x.id)}">Mở</button>${x.shared?'':`<button class="btn sec" data-a="del" data-id="${esc(x.id)}">🗑</button>`}</div></div>`).join('')
+    :'<p class="mut">Chưa có đề nào. Hãy tải một file Docx đề gốc, đề sẽ được lưu tự động vào đây.</p>';
+}
+$('libl').onclick=e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const x=all().find(y=>String(y.id)===b.dataset.id);if(!x)return;
+  if(b.dataset.a==='open')openEx(x);
+  else if(confirm('Xóa đề "'+x.name+'" khỏi thư viện?')){lib=lib.filter(y=>y!==x);save();showLib()}
 };
+$('lx').onclick=()=>{
+  if(!lib.length)return alert('Thư viện đang trống.');
+  dl(new Blob([JSON.stringify(lib)],{type:'application/json'}),'exams.json');
+};
+$('li').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const a=JSON.parse(await f.text());if(!Array.isArray(a))throw Error('File không đúng định dạng');
+    let n=0;
+    a.forEach(x=>{if(x&&x.name&&Array.isArray(x.items)){lib=lib.filter(y=>y.name!==x.name);lib.push({id:'e'+Date.now()+n,name:x.name,at:x.at||Date.now(),items:x.items});n++}});
+    save();showLib();alert(`Đã nhập ${n} đề vào thư viện.`);
+  }catch(err){alert('Lỗi nhập thư viện: '+err.message)}
+  e.target.value='';
+};
+function openEx(ex){
+  base=ex.items;name=ex.name;code=0;cur=base.map(x=>({...x}));
+  $('shuf').disabled=$('exp').disabled=false;$('libbox').open=false;
+  render();window.scrollTo({top:0});
+}
+
+/* ---------- Đảo đề: đảo câu trong từng nhóm (giữa 2 dòng yêu cầu/đoạn văn) + đảo đáp án ---------- */
+const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+function shuffleItems(items){
+  const out=[];let g=[];
+  const fl=()=>{sh(g).forEach(q=>out.push({...q,opts:sh(q.opts)}));g=[]};
+  items.forEach(it=>{if(it.k==='q')g.push(it);else{fl();out.push({...it})}});
+  fl();return out;
+}
+$('shuf').onclick=()=>{cur=shuffleItems(base);code++;render();window.scrollTo({top:0,behavior:'smooth'})};
 
 /* ---------- Hiển thị & chọn đáp án ---------- */
-function rh(rs){
+function rh(rs,b){
   return rs.map(r=>{
     let s=esc(r.t).replace(/\n/g,'<br>');
     if(r.f&1)s='<u>'+s+'</u>';if(r.f&2)s='<b>'+s+'</b>';if(r.f&4)s='<i>'+s+'</i>';
@@ -187,17 +257,21 @@ function rh(rs){
   }).join('');
 }
 function render(){
-  tries=0;
-  $('list').innerHTML=cur.map((q,i)=>`<section class="q" id="q${i}">
-    <div class="qh">Câu ${i+1}</div><div class="st">${rh(q.stem)}</div>
-    <div class="os">${q.opts.map((o,j)=>`<button class="o" data-i="${i}" data-j="${j}"><span class="l">${'ABCD'[j]}</span><span>${rh(o.runs)}</span></button>`).join('')}</div>
-    <div class="fb" id="fb${i}"></div></section>`).join('');
+  tries=0;let n=0;
+  $('list').innerHTML=cur.map((x,i)=>{
+    if(x.k==='h')return`<div class="hd">${rh(x.runs)}</div>`;
+    if(x.k==='p')return`<div class="ps">${rh(x.runs)}</div>`;
+    n++;
+    return`<section class="q" id="q${i}"><div class="qh">Câu ${n}</div><div class="st">${rh(x.stem)}</div>
+    <div class="os">${x.opts.map((o,j)=>`<button class="o" data-i="${i}" data-j="${j}"><span class="l">${'ABCD'[j]}</span><span>${rh(o.runs)}</span></button>`).join('')}</div>
+    <div class="fb" id="fb${i}"></div></section>`;
+  }).join('');
   upd();
 }
 function upd(){
-  const n=cur.length,d=cur.filter(q=>q.done).length;
+  const qs=cur.filter(x=>x.k==='q'),n=qs.length,d=qs.filter(q=>q.done).length;
   $('info').innerHTML=n?`<b>${esc(name)}</b> • ${code?'Mã đề #'+code:'Đề gốc'} • ${n} câu • Đã đúng: <b>${d}/${n}</b> • Lượt chọn sai: <b>${tries}</b>${d===n?' • 🎉 Hoàn thành!':''}`
-    :'Chưa có đề. Hãy bấm "Tải file Docx đề gốc" (câu hỏi bắt đầu bằng "Câu"/"Question", đáp án đúng được gạch chân).';
+    :'Chưa mở đề. Hãy tải file Docx đề gốc hoặc chọn một đề trong thư viện.';
   $('pb').style.width=(n?d/n*100:0)+'%';
 }
 $('list').onclick=e=>{
@@ -209,8 +283,9 @@ $('list').onclick=e=>{
     b.parentNode.querySelectorAll('.o').forEach(x=>x.disabled=true);
     fb.className='fb good';fb.textContent='✅ Chính xác!';
     upd();
-    const nx=$('q'+(i+1));
-    setTimeout(()=>(nx||$('q'+i)).scrollIntoView({behavior:'smooth',block:'center'}),800);
+    const el=$('q'+i);let nx=el.nextElementSibling;
+    while(nx&&!nx.classList.contains('q'))nx=nx.nextElementSibling;
+    setTimeout(()=>(nx||el).scrollIntoView({behavior:'smooth',block:'center'}),800);
   }else{
     b.classList.add('bad');b.disabled=true;tries++;
     fb.className='fb no';fb.textContent='❌ Chưa đúng, hãy chọn lại!';
@@ -221,34 +296,40 @@ $('list').onclick=e=>{
 /* ---------- Xuất file Docx ---------- */
 $('exp').onclick=async()=>{
   try{
-    const D=docx,U={type:D.UnderlineType.SINGLE},P=[];
-    const run=(r,u)=>r.t.split('\n').map((p,k)=>new D.TextRun({
-      text:p,break:k?1:0,bold:!!(r.f&2),italics:!!(r.f&4),underline:(u||(r.f&1))?U:undefined}));
+    const D=docx,U={type:D.UnderlineType.SINGLE},P=[];let n=0;
+    const run=(r,u,b)=>r.t.split('\n').map((p,k)=>new D.TextRun({
+      text:p,break:k?1:0,bold:b||!!(r.f&2),italics:!!(r.f&4),underline:(u||(r.f&1))?U:undefined}));
     P.push(new D.Paragraph({alignment:D.AlignmentType.CENTER,spacing:{after:240},
       children:[new D.TextRun({text:'ĐỀ TRẮC NGHIỆM – '+(code?'MÃ ĐỀ '+code:'ĐỀ GỐC'),bold:true,size:28})]}));
-    cur.forEach((q,i)=>{
+    cur.forEach(x=>{
+      if(x.k!=='q'){
+        P.push(new D.Paragraph({spacing:{before:x.k==='h'?240:80,after:80},children:x.runs.flatMap(r=>run(r,false,x.k==='h'))}));
+        return;
+      }
+      n++;
       P.push(new D.Paragraph({spacing:{before:200,after:60},
-        children:[new D.TextRun({text:`Câu ${i+1}. `,bold:true}),...q.stem.flatMap(r=>run(r,false))]}));
-      q.opts.forEach((o,j)=>P.push(new D.Paragraph({indent:{left:400},
+        children:[new D.TextRun({text:`Câu ${n}. `,bold:true}),...x.stem.flatMap(r=>run(r,false,false))]}));
+      x.opts.forEach((o,j)=>P.push(new D.Paragraph({indent:{left:400},
         children:[
           new D.TextRun({text:'ABCD'[j]+'.',underline:o.ok?U:undefined}),
           new D.TextRun({text:' '}),
-          ...o.runs.flatMap(r=>run(r,o.ok))
+          ...o.runs.flatMap(r=>run(r,o.ok,false))
         ]})));
     });
     const doc=new D.Document({
       styles:{default:{document:{run:{font:'Times New Roman',size:26}}}},
       sections:[{children:P}]
     });
-    const blob=await D.Packer.toBlob(doc);
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob);a.download=`De_dao_${code?'ma_'+code:'goc'}.docx`;
-    document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    dl(await D.Packer.toBlob(doc),`De_dao_${code?'ma_'+code:'goc'}.docx`);
   }catch(err){alert('Lỗi xuất file: '+err.message)}
 };
 
-upd();
+/* ---------- Khởi động ---------- */
+load();showLib();upd();
+// Đề chung: nếu có file exams.json đặt cạnh index.html thì mọi máy đều thấy
+fetch('exams.json',{cache:'no-store'}).then(r=>r.ok?r.json():[]).then(a=>{
+  if(Array.isArray(a)){shared=a.filter(x=>x&&x.name&&Array.isArray(x.items)).map((x,i)=>({...x,id:'s'+i,shared:1}));showLib()}
+}).catch(()=>{});
 </script>
 </body>
 </html>
