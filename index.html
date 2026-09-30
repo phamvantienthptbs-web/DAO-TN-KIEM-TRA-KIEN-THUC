@@ -344,9 +344,10 @@ $('file').onchange=async e=>{
     const ex={id:'e'+Date.now(),name:f.name.replace(/\.docx$/i,''),at:Date.now(),items,req:'',eq,img:IM};
     const old=lib.find(y=>y.name===ex.name);if(old)ex.req=old.req||'';
     lib=lib.filter(y=>y!==old);lib.push(ex);save();showLib();openEx(ex);
-    const miss=qs.filter(q=>!q.opts.some(o=>o.ok)).length,bad=IM.filter(m=>m.bad).length,msg=[];
+    const miss=qs.filter(q=>!q.opts.some(o=>o.ok)).length,bad=IM.filter(m=>m.bad).length,noT=eq.filter(e=>!e.t).length,msg=[];
     if(miss)msg.push(`Có ${miss} câu không tìm thấy đáp án gạch chân, vui lòng kiểm tra lại file gốc.`);
-    if(bad)msg.push(`Có ${bad} hình/công thức ở định dạng EMF/WMF (thường do MathType) mà trình duyệt không hiển thị được. Hãy đổi sang công thức Word (Alt + =) hoặc dán lại dưới dạng ảnh PNG rồi tải lại file.`);
+    if(bad)msg.push(`Có ${bad} hình/công thức ở định dạng EMF/WMF (thường do MathType) mà trình duyệt không hiển thị được. Cách xử lý: dùng chức năng Convert Equations của MathType để chuyển sang Word Equation, hoặc dán lại công thức dưới dạng ảnh PNG, rồi tải lại file. (Nếu chỉ xuất lại file Word thì các công thức này vẫn được giữ nguyên.)`);
+    if(noT)msg.push(`Có ${noT} công thức Word không chuyển được, sẽ hiện nhãn [công thức].`);
     if(msg.length)alert(`Đã đọc ${qs.length} câu.\n`+msg.join('\n'));
   }catch(err){alert('Lỗi đọc file: '+err.message)}
   e.target.value='';
@@ -410,7 +411,7 @@ function kx(l,d){
   try{if(window.katex)return katex.renderToString(l,{throwOnError:false,displayMode:!!d,strict:'ignore'})}catch(e){}
   return'<code>'+esc(l)+'</code>';
 }
-const imH=k=>{const m=(exam.img||[])[k];return!m?'':m.bad?'<span class="badimg">[hình EMF/WMF]</span>':`<img class="im" src="${esc(m.d)}" alt="">`};
+const imH=k=>{const m=(exam.img||[])[k];return!m?'':m.bad?'<span class="badimg">⚠️ công thức MathType (EMF/WMF) - trình duyệt không hiển thị được</span>':`<img class="im" src="${esc(m.d)}" alt="">`};
 function seg(t){
   let o='',i=0;
   t.replace(TK,(m,a,b,c,d,e,f,off)=>{
@@ -498,9 +499,14 @@ $('exp').onclick=async()=>{
   try{
     const z=new JSZip(),eq=exam.eq||[],img=exam.img||[],rels=[],ex={};
     const wt=(t,f)=>{if(!t)return'';const p=(f&2?'<w:b/>':'')+(f&4?'<w:i/>':'')+(f&1?'<w:u w:val="single"/>':'')+(f&8?'<w:vertAlign w:val="subscript"/>':f&16?'<w:vertAlign w:val="superscript"/>':'');return`<w:r>${p?`<w:rPr>${p}</w:rPr>`:''}<w:t xml:space="preserve">${xe(t)}</w:t></w:r>`};
+    const vs=d=>{try{const v=new DataView(Uint8Array.from(atob(d.split(',')[1].slice(0,88)),c=>c.charCodeAt(0)).buffer);
+      if(v.getUint32(0,true)===0x9AC6CDD7){const u=v.getUint16(14,true)||1440;return[(v.getInt16(10,true)-v.getInt16(6,true))/u*96,(v.getInt16(12,true)-v.getInt16(8,true))/u*96]}
+      if(v.getUint32(0,true)===1)return[(v.getInt32(32,true)-v.getInt32(24,true))/2540*96,(v.getInt32(36,true)-v.getInt32(28,true))/2540*96]}catch(e){}return[150,40]};
     const im=k=>{
-      const m=img[k];if(!m||m.bad)return wt('[hình]',0);
-      const h=m.d.slice(0,30),e=/png/.test(h)?'png':/gif/.test(h)?'gif':'jpeg';ex[e]=1;
+      const m=img[k];if(!m)return'';
+      const h=m.d.slice(0,40),e=/emf/i.test(h)?'emf':/wmf/i.test(h)?'wmf':/png/.test(h)?'png':/gif/.test(h)?'gif':'jpeg';
+      if(m.bad&&e!=='emf'&&e!=='wmf')return wt('[hình lỗi]',0);
+      ex[e]=1;if(!m.w)[m.w,m.h]=vs(m.d);
       const n=rels.push(e),s=Math.min(1,520/(m.w||200)),cx=Math.round((m.w||200)*s*9525),cy=Math.round((m.h||100)*s*9525);
       z.file(`word/media/i${n}.${e}`,m.d.split(',')[1],{base64:true});
       return`<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${n}" name="Hinh ${n}"/><a:graphic xmlns:a="${XM}drawingml/2006/main"><a:graphicData uri="${XM}drawingml/2006/picture"><pic:pic xmlns:pic="${XM}drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${n}" name="i${n}.${e}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rIdI${n}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
@@ -523,7 +529,7 @@ $('exp').onclick=async()=>{
     z.file('word/styles.xml',`${H}<w:styles xmlns:w="${W}"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="26"/><w:lang w:val="vi-VN"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80"/></w:pPr></w:pPrDefault></w:docDefaults></w:styles>`);
     z.file('word/_rels/document.xml.rels',`${H}<Relationships xmlns="${XM}package/2006/relationships"><Relationship Id="rIdS" Type="${R}/styles" Target="styles.xml"/>${rels.map((e,i)=>`<Relationship Id="rIdI${i+1}" Type="${R}/image" Target="media/i${i+1}.${e}"/>`).join('')}</Relationships>`);
     z.file('_rels/.rels',`${H}<Relationships xmlns="${XM}package/2006/relationships"><Relationship Id="rId1" Type="${R}/officeDocument" Target="word/document.xml"/></Relationships>`);
-    z.file('[Content_Types].xml',`${H}<Types xmlns="${XM}package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="gif" ContentType="image/gif"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`);
+    z.file('[Content_Types].xml',`${H}<Types xmlns="${XM}package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Default Extension="jpeg" ContentType="image/jpeg"/><Default Extension="gif" ContentType="image/gif"/><Default Extension="emf" ContentType="image/x-emf"/><Default Extension="wmf" ContentType="image/x-wmf"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`);
     dl(await z.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}),(name||'de')+(code?'_ma'+code:'_goc')+'.docx');
   }catch(err){alert('Lỗi xuất file: '+err.message)}
 };
