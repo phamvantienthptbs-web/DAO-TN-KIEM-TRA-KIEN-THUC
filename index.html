@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/docx@7.8.2/build/index.js"></script>
 <style>
-:root{--pri:#4f46e5;--pri2:#7c3aed;--ok:#16a34a;--okbg:#dcfce7;--bad:#dc2626;--badbg:#fee2e2;--bg:#f1f5f9;--tx:#0f172a;--mut:#64748b;--bd:#e2e8f0}
+:root{--pri:#4f46e5;--pri2:#7c3aed;--ok:#16a34a;--okbg:#dcfce7;--bad:#dc2626;--badbg:#fee2e2;--bg:#f1f5f9;--tx:#0f172a;--mut:#64748b;--bd:#e2e8f0;--hh:170px}
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);line-height:1.55}
 .hide{display:none!important}
@@ -33,7 +33,7 @@ header{position:sticky;top:0;z-index:5;background:#fff;box-shadow:0 2px 14px rgb
 .info{font-size:14px;color:var(--mut)}
 .prog{height:6px;background:var(--bd);border-radius:9px;margin-top:8px;overflow:hidden}
 .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#22c55e,#16a34a);transition:width .4s}
-main{max-width:860px;margin:18px auto;padding:0 14px 30px}
+main{max-width:1280px;margin:18px auto;padding:0 14px 30px}
 .lib,.req{background:#fff;border-radius:16px;padding:14px 20px;margin-bottom:18px;box-shadow:0 2px 10px rgba(15,23,42,.06)}
 .lib summary{font-weight:700;cursor:pointer}
 .lr{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd)}
@@ -45,12 +45,16 @@ main{max-width:860px;margin:18px auto;padding:0 14px 30px}
 .mut{color:var(--mut)}
 .note{font-size:13px;color:var(--mut);margin:8px 0 0}
 .req{border-left:5px solid #f59e0b;background:#fffbeb}
-.rh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.rh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
 #reqtx{white-space:pre-wrap}
 textarea{width:100%;padding:12px;border:2px solid var(--bd);border-radius:12px;font:inherit;outline:none;resize:vertical}
-.hd{font-weight:700;background:#eef2ff;border-left:5px solid var(--pri);padding:12px 16px;border-radius:10px;margin:24px 0 14px}
-.ps{background:#fff;border-radius:12px;padding:12px 18px;margin-bottom:12px;box-shadow:0 2px 10px rgba(15,23,42,.05)}
-.q{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px rgba(15,23,42,.06);scroll-margin-top:190px}
+/* Bố cục 2 cột: câu hỏi bên trái, yêu cầu + đoạn văn bên phải */
+.sec{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start;margin-bottom:6px}
+.rcol{position:sticky;top:calc(var(--hh) + 12px);max-height:calc(100vh - var(--hh) - 24px);overflow:auto;padding-right:2px}
+.rcol:empty{display:none}
+.hd{font-weight:700;background:#eef2ff;border-left:5px solid var(--pri);padding:12px 16px;border-radius:10px;margin:0 0 12px}
+.ps{background:#fff;border-radius:12px;padding:14px 18px;margin-bottom:12px;box-shadow:0 2px 10px rgba(15,23,42,.05)}
+.q{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px rgba(15,23,42,.06);scroll-margin-top:calc(var(--hh) + 20px)}
 .qh{font-weight:700;color:var(--pri);margin-bottom:6px}
 .st{font-size:17px;margin-bottom:14px}
 .os{display:grid;gap:10px}
@@ -63,6 +67,10 @@ textarea{width:100%;padding:12px;border:2px solid var(--bd);border-radius:12px;f
 .fb{margin-top:10px;font-weight:600}
 .fb.good{color:var(--ok)}.fb.no{color:var(--bad)}.fb.warn{color:#b45309}
 footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 26px}
+@media(max-width:900px){
+  .sec{grid-template-columns:1fr;gap:0}
+  .rcol{order:-1;position:static;max-height:none;overflow:visible}
+}
 </style>
 </head>
 <body>
@@ -80,7 +88,7 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 26px}
 </div>
 
 <div id="app" class="hide">
-  <header>
+  <header id="hdr">
     <div class="top"><h1>📝 Đảo đề trắc nghiệm</h1><button class="btn sec" id="out">Đăng xuất</button></div>
     <div class="bar">
       <label class="btn" for="file">📂 Tải file Docx đề gốc</label>
@@ -119,12 +127,15 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 26px}
 const PW='huongson28011981';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function setHH(){document.documentElement.style.setProperty('--hh',($('hdr').offsetHeight||170)+'px')}
+addEventListener('resize',setHH);
 
 /* ---------- Đăng nhập (tắt tab là phải đăng nhập lại) ---------- */
 function gate(){
   const ok=sessionStorage.getItem('auth')==='1';
   $('login').classList.toggle('hide',ok);
   $('app').classList.toggle('hide',!ok);
+  if(ok)setHH();
 }
 $('lf').onsubmit=e=>{
   e.preventDefault();
@@ -236,7 +247,7 @@ $('libl').onclick=e=>{
   if(b.dataset.a==='open')openEx(x);
   else if(confirm('Xóa bài tập "'+x.name+'" khỏi danh sách?')){
     lib=lib.filter(y=>y!==x);save();
-    if(exam===x){exam=null;base=[];cur=[];localStorage.removeItem(SK);$('list').innerHTML='';$('shuf').disabled=$('exp').disabled=true;showReq();upd()}
+    if(exam===x){exam=null;base=[];cur=[];localStorage.removeItem(SK);render();$('shuf').disabled=$('exp').disabled=true;showReq()}
     showLib();
   }
 };
@@ -282,7 +293,7 @@ function shuffleItems(items){
 }
 $('shuf').onclick=()=>{cur=shuffleItems(base);code++;render();window.scrollTo({top:0,behavior:'smooth'})};
 
-/* ---------- Hiển thị & chọn đáp án ---------- */
+/* ---------- Hiển thị: câu hỏi bên trái, yêu cầu + đoạn văn bên phải ---------- */
 function rh(rs){
   return rs.map(r=>{
     let s=esc(r.t).replace(/\n/g,'<br>');
@@ -291,15 +302,23 @@ function rh(rs){
   }).join('');
 }
 function render(keep){
-  if(!keep)tries=0;let n=0;
-  $('list').innerHTML=cur.map((x,i)=>{
-    if(x.k==='h')return`<div class="hd">${rh(x.runs)}</div>`;
-    if(x.k==='p')return`<div class="ps">${rh(x.runs)}</div>`;
-    n++;const d=x.done;
-    return`<section class="q" id="q${i}"><div class="qh">Câu ${n}</div><div class="st">${rh(x.stem)}</div>
-    <div class="os">${x.opts.map((o,j)=>`<button class="o${d&&o.ok?' ok':''}"${d?' disabled':''} data-i="${i}" data-j="${j}"><span class="l">${'ABCD'[j]}</span><span>${rh(o.runs)}</span></button>`).join('')}</div>
-    <div class="fb${d?' good':''}" id="fb${i}">${d?'✅ Chính xác!':''}</div></section>`;
-  }).join('');
+  if(!keep)tries=0;
+  document.querySelector('main').insertBefore($('reqbox'),$('list')); // tránh bị xóa khi vẽ lại
+  const S=[];let c=null,n=0;
+  cur.forEach((x,i)=>{
+    if(x.k==='q'){
+      if(!c)S.push(c={f:'',q:''});
+      n++;const d=x.done;
+      c.q+=`<section class="q" id="q${i}"><div class="qh">Câu ${n}</div><div class="st">${rh(x.stem)}</div>
+      <div class="os">${x.opts.map((o,j)=>`<button class="o${d&&o.ok?' ok':''}"${d?' disabled':''} data-i="${i}" data-j="${j}"><span class="l">${'ABCD'[j]}</span><span>${rh(o.runs)}</span></button>`).join('')}</div>
+      <div class="fb${d?' good':''}" id="fb${i}">${d?'✅ Chính xác!':''}</div></section>`;
+    }else{
+      if(!c||c.q)S.push(c={f:'',q:''});
+      c.f+=`<div class="${x.k==='h'?'hd':'ps'}">${rh(x.runs)}</div>`;
+    }
+  });
+  $('list').innerHTML=S.map(s=>`<div class="sec"><div class="qcol">${s.q}</div><aside class="rcol">${s.f}</aside></div>`).join('');
+  const r=document.querySelector('#list .rcol');if(r)r.prepend($('reqbox')); // yêu cầu bài tập nằm cột phải
   upd();
 }
 function upd(){
@@ -308,6 +327,7 @@ function upd(){
     :'Chưa mở bài tập. Hãy tải file Docx đề gốc hoặc chọn một bài trong danh sách.';
   $('pb').style.width=(n?d/n*100:0)+'%';
   if(exam)try{localStorage.setItem(SK,JSON.stringify({id:exam.id,code,tries,cur}))}catch(e){}
+  setHH();
 }
 $('list').onclick=e=>{
   const b=e.target.closest('.o');if(!b||b.disabled)return;
@@ -319,7 +339,9 @@ $('list').onclick=e=>{
     fb.className='fb good';fb.textContent='✅ Chính xác!';
     upd();
     const el=$('q'+i);let nx=el.nextElementSibling;
-    while(nx&&!nx.classList.contains('q'))nx=nx.nextElementSibling;
+    if(!nx){ // câu cuối của nhóm: sang câu đầu của nhóm kế tiếp
+      const s=el.closest('.sec').nextElementSibling;nx=s&&s.querySelector('.q');
+    }
     setTimeout(()=>(nx||el).scrollIntoView({behavior:'smooth',block:'center'}),800);
   }else{
     b.classList.add('bad');b.disabled=true;tries++;
