@@ -52,6 +52,10 @@ textarea{width:100%;padding:12px;border:2px solid var(--bd);border-radius:12px;f
 .sec{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start;margin-bottom:6px}
 .rcol{position:sticky;top:calc(var(--hh) + 12px);max-height:calc(100vh - var(--hh) - 24px);overflow:auto;padding-right:2px}
 .rcol:empty{display:none}
+.typ{display:inline-block;border:0;border-radius:20px;padding:5px 14px;font:600 13px/1.4 system-ui,sans-serif;margin-bottom:12px;text-align:left}
+button.typ{cursor:pointer}
+.typ.t1{background:#e0f2fe;color:#075985}
+.typ.t2{background:#fce7f3;color:#9d174d}
 .hd{font-weight:700;background:#eef2ff;border-left:5px solid var(--pri);padding:12px 16px;border-radius:10px;margin:0 0 12px}
 .ps{background:#fff;border-radius:12px;padding:14px 18px;margin-bottom:12px;box-shadow:0 2px 10px rgba(15,23,42,.05)}
 .q{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 10px rgba(15,23,42,.06);scroll-margin-top:calc(var(--hh) + 20px)}
@@ -188,6 +192,21 @@ function blocks(T,F,a,b){
   return out;
 }
 
+/* ---------- Phân loại dạng bài: g=0 đơn lẻ, g=1 nhóm câu hỏi ---------- */
+const KW=/passage|numbered blanks?|conversation|dialogue|advertisement|announcement|leaflet|notice|arrange|đoạn văn|bài đọc|hội thoại|sắp xếp/i;
+function isGrp(f,q){
+  const tx=x=>x.runs.map(r=>r.t).join('');
+  const h=f.filter(x=>x.k==='h').map(tx).join(' '),p=f.filter(x=>x.k==='p').map(tx).join(' ');
+  return p.length>=150||KW.test(h)||(q.length>=3&&KW.test(p.slice(0,120)));
+}
+function classify(items){ // mỗi cụm câu hỏi liên tiếp (giữa 2 dòng yêu cầu/đoạn văn) là một phần
+  let f=[],q=[];
+  const fin=()=>{const g=isGrp(f,q)?1:0;q.forEach(x=>x.g=g);f=[];q=[]};
+  items.forEach(it=>{if(it.k==='q')q.push(it);else{if(q.length)fin();f.push(it)}});
+  if(q.length)fin();
+}
+function ensureG(it){if(it.some(x=>x.k==='q'&&x.g===undefined))classify(it)}
+
 function parse(T,F){
   const re=/(?:^|\n)[ \t]*(?:câu|question)\s*\d+\s*[.:)]?[ \t]*/gi,ms=[...T.matchAll(re)],out=[];
   if(!ms.length)return out;
@@ -216,6 +235,7 @@ function parse(T,F){
     });
     out.push(...blocks(T,F,endD,e));
   });
+  classify(out);
   return out;
 }
 
@@ -266,7 +286,7 @@ $('li').onchange=async e=>{
   e.target.value='';
 };
 function openEx(ex){
-  exam=ex;base=ex.items;name=ex.name;code=0;cur=base.map(x=>({...x}));
+  exam=ex;base=ex.items;ensureG(base);name=ex.name;code=0;cur=base.map(x=>({...x}));
   $('shuf').disabled=$('exp').disabled=false;$('libbox').open=false;
   showReq();render();window.scrollTo({top:0});
 }
@@ -283,15 +303,30 @@ $('reqe').onclick=()=>{$('reqta').value=exam.req||'';$('reqed').classList.remove
 $('reqs').onclick=()=>{exam.req=$('reqta').value.trim();save();showReq();showLib()};
 $('reqc').onclick=showReq;
 
-/* ---------- Đảo đề: đảo câu trong từng nhóm (giữa 2 dòng yêu cầu/đoạn văn) + đảo đáp án ---------- */
+/* ---------- Đảo đề ---------- */
+// Dạng 1 (đơn lẻ): đảo thứ tự câu trong cụm + đảo đáp án. Dạng 2 (nhóm câu hỏi): giữ nguyên thứ tự câu, chỉ đảo đáp án.
 const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 function shuffleItems(items){
   const out=[];let g=[];
-  const fl=()=>{sh(g).forEach(q=>out.push({...q,opts:sh(q.opts)}));g=[]};
+  const fl=()=>{(g.length&&g[0].g?g:sh(g)).forEach(q=>out.push({...q,opts:sh(q.opts)}));g=[]};
   items.forEach(it=>{if(it.k==='q')g.push(it);else{fl();out.push({...it})}});
   fl();return out;
 }
 $('shuf').onclick=()=>{cur=shuffleItems(base);code++;render();window.scrollTo({top:0,behavior:'smooth'})};
+
+// Vị trí [bắt đầu, kết thúc) của từng cụm câu hỏi liên tiếp
+function runs(items){
+  const R=[];let s=-1;
+  items.forEach((x,i)=>{if(x.k==='q'){if(s<0)s=i}else if(s>=0){R.push([s,i]);s=-1}});
+  if(s>=0)R.push([s,items.length]);
+  return R;
+}
+function toggleType(k){ // đổi thủ công dạng bài, áp dụng từ lần Đảo đề kế tiếp
+  const R=runs(cur)[k];if(!R)return;
+  const v=cur[R[0]].g?0:1;
+  for(let i=R[0];i<R[1];i++){cur[i].g=v;if(base[i])base[i].g=v}
+  save();render(true);
+}
 
 /* ---------- Hiển thị: câu hỏi bên trái, yêu cầu + đoạn văn bên phải ---------- */
 function rh(rs){
@@ -301,35 +336,44 @@ function rh(rs){
     return s;
   }).join('');
 }
+function badge(s){
+  if(s.k<0)return'';
+  const ed=exam&&!exam.shared,tg=ed?'button':'span';
+  const tx=(s.g?'2️⃣ Dạng nhóm câu hỏi · giữ thứ tự câu, chỉ đảo đáp án':'1️⃣ Dạng đơn lẻ · đảo câu + đảo đáp án')+` · ${s.n} câu`+(ed?' ✎':'');
+  return`<${tg} class="typ t${s.g?2:1}"${ed?` data-s="${s.k}" title="Bấm để đổi dạng (áp dụng từ lần Đảo đề kế tiếp)"`:''}>${tx}</${tg}>`;
+}
 function render(keep){
   if(!keep)tries=0;
   document.querySelector('main').insertBefore($('reqbox'),$('list')); // tránh bị xóa khi vẽ lại
-  const S=[];let c=null,n=0;
+  const S=[];let c=null,n=0,rk=0;
   cur.forEach((x,i)=>{
     if(x.k==='q'){
-      if(!c)S.push(c={f:'',q:''});
-      n++;const d=x.done;
+      if(!c)S.push(c={f:'',q:'',k:-1,g:0,n:0});
+      if(c.k<0){c.k=rk++;c.g=x.g?1:0}
+      c.n++;n++;const d=x.done;
       c.q+=`<section class="q" id="q${i}"><div class="qh">Câu ${n}</div><div class="st">${rh(x.stem)}</div>
       <div class="os">${x.opts.map((o,j)=>`<button class="o${d&&o.ok?' ok':''}"${d?' disabled':''} data-i="${i}" data-j="${j}"><span class="l">${'ABCD'[j]}</span><span>${rh(o.runs)}</span></button>`).join('')}</div>
       <div class="fb${d?' good':''}" id="fb${i}">${d?'✅ Chính xác!':''}</div></section>`;
     }else{
-      if(!c||c.q)S.push(c={f:'',q:''});
+      if(!c||c.q)S.push(c={f:'',q:'',k:-1,g:0,n:0});
       c.f+=`<div class="${x.k==='h'?'hd':'ps'}">${rh(x.runs)}</div>`;
     }
   });
-  $('list').innerHTML=S.map(s=>`<div class="sec"><div class="qcol">${s.q}</div><aside class="rcol">${s.f}</aside></div>`).join('');
+  $('list').innerHTML=S.map(s=>`<div class="sec"><div class="qcol">${badge(s)}${s.q}</div><aside class="rcol">${s.f}</aside></div>`).join('');
   const r=document.querySelector('#list .rcol');if(r)r.prepend($('reqbox')); // yêu cầu bài tập nằm cột phải
   upd();
 }
 function upd(){
-  const qs=cur.filter(x=>x.k==='q'),n=qs.length,d=qs.filter(q=>q.done).length;
-  $('info').innerHTML=n?`Bài tập <b>${all().indexOf(exam)+1}/${all().length}</b>: <b>${esc(name)}</b> • ${code?'Mã đề #'+code:'Đề gốc'} • ${n} câu • Đã đúng: <b>${d}/${n}</b> • Lượt chọn sai: <b>${tries}</b>${d===n?' • 🎉 Hoàn thành!':''}`
+  const qs=cur.filter(x=>x.k==='q'),n=qs.length,d=qs.filter(q=>q.done).length,g2=qs.filter(q=>q.g).length;
+  $('info').innerHTML=n?`Bài tập <b>${all().indexOf(exam)+1}/${all().length}</b>: <b>${esc(name)}</b> • ${code?'Mã đề #'+code:'Đề gốc'} • ${n} câu (đơn lẻ: ${n-g2}, nhóm: ${g2}) • Đã đúng: <b>${d}/${n}</b> • Lượt chọn sai: <b>${tries}</b>${d===n?' • 🎉 Hoàn thành!':''}`
     :'Chưa mở bài tập. Hãy tải file Docx đề gốc hoặc chọn một bài trong danh sách.';
   $('pb').style.width=(n?d/n*100:0)+'%';
   if(exam)try{localStorage.setItem(SK,JSON.stringify({id:exam.id,code,tries,cur}))}catch(e){}
   setHH();
 }
 $('list').onclick=e=>{
+  const t=e.target.closest('button.typ');
+  if(t){toggleType(+t.dataset.s);return}
   const b=e.target.closest('.o');if(!b||b.disabled)return;
   const i=+b.dataset.i,j=+b.dataset.j,q=cur[i],fb=$('fb'+i);
   if(!q.opts.some(o=>o.ok)){fb.className='fb warn';fb.textContent='⚠️ Câu này không tìm thấy đáp án gạch chân trong file gốc.';return}
@@ -339,7 +383,7 @@ $('list').onclick=e=>{
     fb.className='fb good';fb.textContent='✅ Chính xác!';
     upd();
     const el=$('q'+i);let nx=el.nextElementSibling;
-    if(!nx){ // câu cuối của nhóm: sang câu đầu của nhóm kế tiếp
+    if(!nx){ // câu cuối của cụm: sang câu đầu của cụm kế tiếp
       const s=el.closest('.sec').nextElementSibling;nx=s&&s.querySelector('.q');
     }
     setTimeout(()=>(nx||el).scrollIntoView({behavior:'smooth',block:'center'}),800);
@@ -389,7 +433,7 @@ function tryRestore(){ // mở lại đúng bài đang làm dở
   try{
     const s=JSON.parse(localStorage.getItem(SK)||'null');if(!s)return;
     const ex=all().find(y=>String(y.id)===String(s.id));if(!ex)return;
-    exam=ex;base=ex.items;name=ex.name;code=s.code;tries=s.tries;cur=s.cur;
+    exam=ex;base=ex.items;ensureG(base);name=ex.name;code=s.code;tries=s.tries;cur=s.cur;ensureG(cur);
     $('shuf').disabled=$('exp').disabled=false;$('libbox').open=false;
     showReq();render(true);
   }catch(e){}
