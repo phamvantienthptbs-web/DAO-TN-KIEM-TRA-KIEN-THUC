@@ -14,21 +14,11 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--tx);line-height:1.55}
 .hide{display:none!important}
-#login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#4f46e5,#7c3aed 55%,#ec4899)}
-.lbox{background:#fff;border-radius:22px;padding:38px 32px 28px;width:100%;max-width:410px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,.3)}
-.lbox .ic{font-size:52px}
-.lbox h1{margin:6px 0 4px;font-size:22px}
-.lbox p{margin:0 0 22px;color:var(--mut);font-size:14px}
-input[type=password]{width:100%;padding:13px 16px;border:2px solid var(--bd);border-radius:12px;font-size:16px;outline:none;transition:.15s}
-input[type=password]:focus,textarea:focus{border-color:var(--pri);box-shadow:0 0 0 4px rgba(79,70,229,.12)}
-.err{color:var(--bad);font-size:14px;margin-top:10px;min-height:20px}
-.copy{margin-top:18px;font-size:13px;color:var(--mut)}
 .btn{display:inline-block;border:0;border-radius:12px;padding:11px 18px;font-weight:600;font-size:15px;font-family:inherit;cursor:pointer;background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;transition:.15s}
 .btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 16px rgba(79,70,229,.35)}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.sec{background:#fff;color:var(--pri);border:2px solid var(--pri);padding:8px 14px;font-size:14px}
 .btn.gr{background:linear-gradient(135deg,#16a34a,#059669)}
-.lbox .btn{width:100%;margin-top:14px;font-size:15px;padding:11px 18px}
 header{position:sticky;top:0;z-index:5;background:#fff;box-shadow:0 2px 14px rgba(15,23,42,.1);padding:12px 18px}
 .top{display:flex;justify-content:space-between;align-items:center}
 .top h1{font-size:19px;margin:0}
@@ -85,21 +75,9 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 26px}
 </head>
 <body>
 
-<div id="login">
-  <form class="lbox" id="lf">
-    <div class="ic">🔐</div>
-    <h1>Phần mềm Đảo đề Trắc nghiệm</h1>
-    <p>Vui lòng nhập mật khẩu để tiếp tục</p>
-    <input type="password" id="pw" placeholder="Nhập mật khẩu..." autocomplete="current-password" autofocus>
-    <div class="err" id="err"></div>
-    <button class="btn" type="submit">Đăng nhập</button>
-    <div class="copy">Bản quyền thuộc về số ĐT: 0943930787</div>
-  </form>
-</div>
-
-<div id="app" class="hide">
+<div id="app">
   <header id="hdr">
-    <div class="top"><h1>📝 Đảo đề trắc nghiệm</h1><button class="btn sec" id="out">Đăng xuất</button></div>
+    <div class="top"><h1>📝 Đảo đề trắc nghiệm</h1></div>
     <div class="bar">
       <label class="btn" for="file">📂 Tải file Docx đề gốc</label>
       <input type="file" id="file" accept=".docx" hidden>
@@ -134,26 +112,11 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:0 0 26px}
 </div>
 
 <script>
-const PW='tienkiet28011981';
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function setHH(){document.documentElement.style.setProperty('--hh',($('hdr').offsetHeight||170)+'px')}
 addEventListener('resize',setHH);
-
-/* ---------- Đăng nhập (tắt tab là phải đăng nhập lại) ---------- */
-function gate(){
-  const ok=sessionStorage.getItem('auth')==='1';
-  $('login').classList.toggle('hide',ok);
-  $('app').classList.toggle('hide',!ok);
-  if(ok)setHH();
-}
-$('lf').onsubmit=e=>{
-  e.preventDefault();
-  if($('pw').value===PW){sessionStorage.setItem('auth','1');$('pw').value='';$('err').textContent='';gate()}
-  else{$('err').textContent='Mật khẩu không đúng, vui lòng thử lại!';$('pw').select()}
-};
-$('out').onclick=()=>{sessionStorage.removeItem('auth');gate()};
-gate();
+setHH();
 
 /* ---------- Dữ liệu (lưu trong localStorage của trình duyệt trên máy người dùng) ---------- */
 let base=[],cur=[],code=0,name='',tries=0,lib=[],shared=[],exam=null;
@@ -387,8 +350,7 @@ function openEx(ex){
 
 /* ---------- Yêu cầu bài tập ---------- */
 function showReq(){
-  const ed=exam&&!exam.shared,t=$('reqtx');
-  $('reqbox').classList.toggle('hide',!exam||(!exam.req&&!ed));
+  const ed=exam&&!exam.shared,t=$('reqtx');$('reqbox').classList.toggle('hide',!exam||(!exam.req&&!ed));
   t.textContent=(exam&&exam.req)||'Chưa có yêu cầu. Bấm "Sửa yêu cầu" để nhập hướng dẫn cho học sinh.';
   t.classList.toggle('mut',!(exam&&exam.req));t.classList.remove('hide');
   $('reqed').classList.add('hide');$('reqe').classList.toggle('hide',!ed);
