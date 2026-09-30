@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phần Mềm Trắc Nghiệm Tiếng Anh</title>
+    <!-- Tích hợp thư viện Mammoth và Docx.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <script src="https://unpkg.com/docx@8.2.3/build/index.js"></script>
+    
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --primary-hover: #4338CA;
+            --success: #10B981;
+            --danger: #EF4444;
+            --bg: #F3F4F6;
+            --card-bg: #FFFFFF;
+            --text-main: #1F2937;
+            --text-light: #6B7280;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Login Screen */
+        #login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-card h2 {
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .copyright {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--danger);
+            font-weight: 600;
+        }
+
+        /* App Screen */
+        #app-screen {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .header {
+            background: var(--card-bg);
+            padding: 1rem 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn-small {
+            width: auto;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .btn-logout {
+            background: var(--danger);
+        }
+        .btn-logout:hover {
+            background: #B91C1C;
+        }
+
+        /* Quiz Container */
+        .quiz-container {
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            flex: 1;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .question-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            border-left: 5px solid var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .question-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .option-btn {
+            background: #F9FAFB;
+            border: 2px solid #E5E7EB;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            line-height: 1.4;
+        }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: #EEF2FF;
+        }
+
+        .option-btn.correct {
+            background: #D1FAE5;
+            border-color: var(--success);
+            color: #065F46;
+        }
+
+        .option-btn.wrong {
+            background: #FEE2E2;
+            border-color: var(--danger);
+            color: #991B1B;
+            animation: shake 0.4s;
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+        }
+
+        .feedback-text {
+            margin-top: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .file-input-wrapper input[type=file] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Màn hình đăng nhập -->
+    <div id="login-screen">
+        <div class="login-card">
+            <h2>Hệ Thống Trắc Nghiệm</h2>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="Nhập mật khẩu..." onkeypress="handleEnter(event)">
+            </div>
+            <button class="btn" onclick="checkLogin()">Đăng Nhập</button>
+            <div class="copyright">Bản quyền thuộc về số ĐT: 0943930787</div>
+        </div>
+    </div>
+
+    <!-- Màn hình chính của phần mềm -->
+    <div id="app-screen">
+        <div class="header">
+            <div class="header-controls">
+                <div class="file-input-wrapper">
+                    <button class="btn btn-small">Tải file Docx đề gốc</button>
+                    <input type="file" id="file-upload" accept=".docx" onchange="handleFileUpload(event)">
+                </div>
+                <button class="btn btn-small" onclick="shuffleQuiz()">Đảo đề</button>
+                <button class="btn btn-small" style="background: #059669;" onclick="exportDocx()">Xuất file Docx</button>
+            </div>
+            <button class="btn btn-small btn-logout" onclick="logout()">Đăng xuất</button>
+        </div>
+
+        <div class="quiz-container" id="quiz-container">
+            <!-- Câu hỏi sẽ được render ở đây -->
+            <div style="text-align: center; color: var(--text-light); margin-top: 2rem;">
+                Vui lòng tải file Word (.docx) chứa câu hỏi để bắt đầu học.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. XỬ LÝ ĐĂNG NHẬP ---
+        const PASSWORD_CORRECT = "huongson28011981";
+        const SESSION_KEY = "isLoggedIn_huongson";
+
+        window.onload = () => {
+            if (sessionStorage.getItem(SESSION_KEY) === "true") {
+                showAppScreen();
+            }
+        };
+
+        function handleEnter(e) {
+            if (e.key === "Enter") checkLogin();
+        }
+
+        function checkLogin() {
+            const pass = document.getElementById("password").value;
+            if (pass === PASSWORD_CORRECT) {
+                sessionStorage.setItem(SESSION_KEY, "true");
+                showAppScreen();
+            } else {
+                alert("Mật khẩu không chính xác!");
+            }
+        }
+
+        function logout() {
+            sessionStorage.removeItem(SESSION_KEY);
+            document.getElementById("password").value = "";
+            document.getElementById("login-screen").style.display = "flex";
+            document.getElementById("app-screen").style.display = "none";
+        }
+
+        function showAppScreen() {
+            document.getElementById("login-screen").style.display = "none";
+            document.getElementById("app-screen").style.display = "flex";
+        }
+
+        // --- 2. XỬ LÝ DỮ LIỆU ĐỀ THI ---
+        let questionsData = [];
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const arrayBuffer = e.target.result;
+                
+                // Cấu hình Mammoth map thẻ gạch chân thành <u> để nhận diện đáp án đúng
+                const options = {
+                    styleMap: ["u => u"]
+                };
+
+                mammoth.convertToHtml({ arrayBuffer: arrayBuffer }, options)
+                    .then(displayResult)
+                    .catch(handleError);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function displayResult(result) {
+            const html = result.value;
+            parseHtmlToQuestions(html);
+        }
+
+        function handleError(err) {
+            console.error(err);
+            alert("Lỗi khi đọc file Word. Hãy chắc chắn đó là file .docx hợp lệ.");
+        }
+
+        function parseHtmlToQuestions(html) {
+            questionsData = [];
+            
+            // Chuyển HTML string thành DOM để dễ xử lý
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const paragraphs = Array.from(doc.body.querySelectorAll('p'));
+
+            let currentQ = null;
+
+            paragraphs.forEach(p => {
+                let text = p.textContent.trim();
+                if (!text) return;
+
+                // Nhận diện câu hỏi (bắt đầu bằng Câu hoặc Question)
+                if (text.match(/^(Câu|Question)\s*\d+[:\.]?/i)) {
+                    // Cắt bỏ chữ "Câu X: "
+                    let qText = text.replace(/^(Câu|Question)\s*\d+[:\.]?\s*/i, '');
+                    currentQ = { text: qText, options: [] };
+                    questionsData.push(currentQ);
+                } 
+                // Nhận diện đáp án (bắt đầu bằng A, B, C, D)
+                else if (currentQ && text.match(/^[A-D][\.\)]/i)) {
+                    // Kiểm tra xem đoạn HTML gốc của thẻ p này có chứa <u> hay không
+                    let isCorrect = p.innerHTML.includes('<u>') || p.innerHTML.includes('<u ');
+                    
+                    // Lấy nội dung đáp án bỏ đi A. B. C. D.
+                    let optText = text.replace(/^[A-D][\.\)]\s*/i, '');
+                    
+                    currentQ.options.push({ text: optText, isCorrect: isCorrect });
+                }
+            });
+
+            if (questionsData.length === 0) {
+                alert("Không tìm thấy câu hỏi nào! Hãy chắc chắn câu hỏi bắt đầu bằng chữ 'Câu' hoặc 'Question', và đáp án bắt đầu bằng 'A.', 'B.', 'C.', 'D.'.");
+            } else {
+                alert(`Đã tải thành công ${questionsData.length} câu hỏi!`);
+                renderQuiz();
+            }
+        }
+
+        // --- 3. ĐẢO ĐỀ ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function shuffleQuiz() {
+            if (questionsData.length === 0) {
+                alert("Vui lòng tải đề lên trước!");
+                return;
+            }
+            // Đảo thứ tự các câu hỏi
+            shuffleArray(questionsData);
+            
+            // Đảo thứ tự các đáp án bên trong từng câu
+            questionsData.forEach(q => {
+                shuffleArray(q.options);
+            });
+            
+            renderQuiz();
+            // Cuộn lên đầu
+            document.getElementById('quiz-container').scrollTo(0,0);
+        }
+
+        // --- 4. RENDER GIAO DIỆN HỌC ---
+        function renderQuiz() {
+            const container = document.getElementById("quiz-container");
+            container.innerHTML = "";
+
+            const labels = ["A. ", "B. ", "C. ", "D. "];
+
+            questionsData.forEach((q, qIndex) => {
+                const card = document.createElement('div');
+                card.className = "question-card";
+                card.id = `question-${qIndex}`;
+
+                const title = document.createElement('div');
+                title.className = "question-title";
+                title.innerText = `Câu ${qIndex + 1}: ${q.text}`;
+                card.appendChild(title);
+
+                const optionsGrid = document.createElement('div');
+                optionsGrid.className = "options-grid";
+
+                const feedback = document.createElement('div');
+                feedback.className = "feedback-text";
+
+                q.options.forEach((opt, optIndex) => {
+                    const btn = document.createElement('button');
+                    btn.className = "option-btn";
+                    btn.innerText = labels[optIndex] + opt.text;
+                    
+                    btn.onclick = function() {
+                        if (opt.isCorrect) {
+                            btn.classList.add("correct");
+                            feedback.innerText = "Chính xác! Đang chuyển câu tiếp theo...";
+                            feedback.style.color = "var(--success)";
+                            feedback.style.display = "block";
+                            
+                            // Khóa các nút khác
+                            Array.from(optionsGrid.children).forEach(b => b.disabled = true);
+                            
+                            // Tự động cuộn sang câu tiếp theo sau 1 giây
+                            setTimeout(() => {
+                                const nextCard = document.getElementById(`question-${qIndex + 1}`);
+                                if (nextCard) {
+                                    nextCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                }
+                            }, 1000);
+                        } else {
+                            btn.classList.add("wrong");
+                            feedback.innerText = "Sai rồi, hãy chọn lại nhé!";
+                            feedback.style.color = "var(--danger)";
+                            feedback.style.display = "block";
+                            
+                            // Bỏ rung sau khi chạy animation để có thể rung lại nếu bấm tiếp
+                            setTimeout(() => btn.classList.remove("wrong"), 400);
+                        }
+                    };
+                    optionsGrid.appendChild(btn);
+                });
+
+                card.appendChild(optionsGrid);
+                card.appendChild(feedback);
+                container.appendChild(card);
+            });
+        }
+
+        // --- 5. XUẤT FILE DOCX ---
+        function exportDocx() {
+            if (questionsData.length === 0) {
+                alert("Không có dữ liệu để xuất!");
+                return;
+            }
+
+            const docxInstance = window.docx;
+            const sections = [];
+            const labels = ["A. ", "B. ", "C. ", "D. "];
+
+            const children = [];
+
+            questionsData.forEach((q, qIndex) => {
+                // Thêm dòng Câu hỏi
+                children.push(new docxInstance.Paragraph({
+                    children: [
+                        new docxInstance.TextRun({
+                            text: `Câu ${qIndex + 1}: ${q.text}`,
+                            bold: true,
+                        })
+                    ],
+                    spacing: { before: 200, after: 100 }
+                }));
+
+                // Thêm 4 dòng đáp án
+                q.options.forEach((opt, optIndex) => {
+                    const textRunConfig = { text: labels[optIndex] + opt.text };
+                    
+                    // Nếu là đáp án đúng -> Gạch chân
+                    if (opt.isCorrect) {
+                        textRunConfig.underline = {
+                            type: docxInstance.UnderlineType.SINGLE,
+                            color: "000000"
+                        };
+                    }
+
+                    children.push(new docxInstance.Paragraph({
+                        children: [new docxInstance.TextRun(textRunConfig)]
+                    }));
+                });
+            });
+
+            const doc = new docxInstance.Document({
+                sections: [{
+                    properties: {},
+                    children: children
+                }]
+            });
+
+            docxInstance.Packer.toBlob(doc).then(blob => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "Ma_De_Da_Dao.docx";
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+    </script>
+</body>
+</html>
